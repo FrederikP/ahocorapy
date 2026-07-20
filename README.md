@@ -1,7 +1,3 @@
-> **DEPRECATED**: This project is no longer actively maintained. While the existing code will continue to work, no new features, bug fixes, or security updates will be provided. Consider using alternatives like [pyahocorasick](https://github.com/WojciechMula/pyahocorasick/) for actively maintained Aho-Corasick implementations.
-
----
-
 [![Test](https://img.shields.io/github/actions/workflow/status/abusix/ahocorapy/pythontest.yml?branch=master)](https://github.com/abusix/ahocorapy/actions)
 [![Test Coverage](https://img.shields.io/codecov/c/gh/abusix/ahocorapy/master)](https://codecov.io/gh/abusix/ahocorapy)
 [![Downloads](https://pepy.tech/badge/ahocorapy)](https://pepy.tech/project/ahocorapy)
@@ -10,7 +6,7 @@
 [![PyPi Versions](https://img.shields.io/pypi/pyversions/ahocorapy.svg)](https://pypi.python.org/pypi/ahocorapy)
 [![PyPi Wheel](https://img.shields.io/pypi/wheel/ahocorapy.svg)](https://pypi.python.org/pypi/ahocorapy)
 
-# ahocorapy - Fast Many-Keyword Search in Pure Python (Deprecated)
+# ahocorapy - Fast Many-Keyword Search in Pure Python
 
 ahocorapy is a pure python implementation of the Aho-Corasick Algorithm.
 Given a list of keywords one can check if at least one of the keywords exist in a given text in linear time.
