@@ -214,7 +214,7 @@ class TestAhocorapy(unittest.TestCase):
     def test_many_keywords(self):
         kwtree = KeywordTree(case_insensitive=True)
         with open('tests/data/names.txt') as keyword_file:
-            keyword_list = list(map(str.strip, keyword_file.readlines()))
+            keyword_list = [line.strip() for line in keyword_file.readlines()]
 
         for kw in keyword_list:
             kwtree.add(kw)
