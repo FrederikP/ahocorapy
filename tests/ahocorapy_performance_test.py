@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+import gc
 from timeit import timeit
 
 from py_aho_corasick import py_aho_corasick
@@ -22,6 +23,11 @@ with open('tests/data/names.txt') as keyword_file:
 with open('tests/data/textblob.txt') as keyword_file:
     textblob = keyword_file.read()
 
+# The textblob contains exactly one keyword, so it only measures scanning
+# through mostly matchless text. The dense text measures the other extreme:
+# almost every position is part of a match.
+dense_textblob = (' '.join(keyword_list[:2000])) * 3
+
 print('-' * 10 + 'ahocorapy' + '-' * 10)
 
 
@@ -40,14 +46,28 @@ def search_ahocorapy(ahocorapy_tree, textblob):
     return result
 
 
+# Used for the dense text, where building a result string would dominate
+# the timing instead of the actual search.
+def count_ahocorapy(ahocorapy_tree, textblob):
+    count = 0
+    for _ in ahocorapy_tree.search_all(textblob):
+        count += 1
+    return count
+
+
 ahocorapy_tree = init_ahocorapy()
 result = search_ahocorapy(ahocorapy_tree, textblob)
 assert result == 'Dawn Higgins'
 builtins.__dict__.update(locals())
 print('setup_ahocorapy: ' +
       str(timeit(stmt='init_ahocorapy()', number=1)))
+# Collect the tree that was built for the setup timing, so that gc pauses
+# (especially on pypy) don't distort the search timings below.
+gc.collect()
 print('search_ahocorapy: ' + str(timeit(stmt='search_ahocorapy(ahocorapy_tree, textblob)',
                                         number=SEARCH_ITERATIONS)))
+print('search_ahocorapy_dense: ' + str(timeit(stmt='count_ahocorapy(ahocorapy_tree, dense_textblob)',
+                                              number=SEARCH_ITERATIONS)))
  
 print('-' * 10 + 'pyahocorasick' + '-' * 10)
      
@@ -60,6 +80,13 @@ def init_ahocorasick():
     return A
      
      
+def count_ahocorasick(ahocorasick_tree, textblob):
+    count = 0
+    for _ in ahocorasick_tree.iter(textblob):
+        count += 1
+    return count
+
+
 def search_ahocorasick(ahocorasick_tree, textblob):
     result = ''
     for _, keyword in ahocorasick_tree.iter(textblob):
@@ -73,8 +100,11 @@ assert result == 'Dawn Higgins'
 builtins.__dict__.update(locals())
 print('setup_pyahocorasick: ' +
       str(timeit(stmt='init_ahocorasick()', number=1)))
+gc.collect()
 print('search_pyahocorasick: ' + str(timeit(stmt='search_ahocorasick(ahocorasick_tree, textblob)',
                                             number=SEARCH_ITERATIONS)))
+print('search_pyahocorasick_dense: ' + str(timeit(stmt='count_ahocorasick(ahocorasick_tree, dense_textblob)',
+                                                  number=SEARCH_ITERATIONS)))
     
   
 print('-' * 10 + 'py_aho_corasick' + '-' * 10)
@@ -84,6 +114,10 @@ def init_py_aho_corasick():
     return py_aho_corasick.Automaton(keyword_list)
   
   
+def count_py_aho_corasick(py_aho_corasick_tree, textblob):
+    return len(py_aho_corasick_tree.get_keywords_found(textblob))
+
+
 def search_py_aho_corasick(py_aho_corasick_tree, textblob):
     result = ''
     for match in py_aho_corasick_tree.get_keywords_found(textblob):
@@ -97,5 +131,8 @@ assert result == 'dawn higgins'
 builtins.__dict__.update(locals())
 print('setup_py_aho_corasick: ' +
       str(timeit(stmt='init_py_aho_corasick()', number=1)))
+gc.collect()
 print('search_py_aho_corasick: ' + str(timeit(stmt='search_py_aho_corasick(py_aho_corasick_tree, textblob)',
                                               number=SEARCH_ITERATIONS)))
+print('search_py_aho_corasick_dense: ' + str(timeit(stmt='count_py_aho_corasick(py_aho_corasick_tree, dense_textblob)',
+                                                    number=SEARCH_ITERATIONS)))

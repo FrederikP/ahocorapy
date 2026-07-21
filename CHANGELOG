@@ -1,4 +1,11 @@
 Upcoming
+- major search performance improvement: matches to report are precomputed per state and
+  for string inputs stretches of text in which no keyword can start are skipped using a
+  precompiled regex character class. Searching text with few matches is now ~6x faster
+  and on par with the pyahocorasick C extension (faster than it on pypy), match-dense
+  text is ~25-40% faster. Setup takes slightly longer due to the precomputation.
+- performance test now also measures a match-dense scenario and collects garbage between
+  timings to keep gc pauses (mainly on pypy) out of the search measurements
 - refreshed performance comparison numbers in README (CPython 3.14, PyPy 7.3.23, latest library versions)
 
 1.7.0

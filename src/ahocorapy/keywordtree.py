@@ -10,10 +10,17 @@ Created on Jan 5, 2016
 @author: Frederik Petersen (frederik@the-imperfection.de)
 '''
 
+import re
+
+try:
+    _TEXT_TYPES = (str, unicode)  # Python 2
+except NameError:
+    _TEXT_TYPES = (str,)  # Python 3
+
 
 class State(object):
     __slots__ = ['identifier', 'symbol', 'success', 'transitions', 'parent',
-                 'matched_keyword', 'longest_strict_suffix']
+                 'matched_keyword', 'longest_strict_suffix', 'outputs']
 
     def __init__(self, identifier, symbol=None,  parent=None, success=False):
         self.symbol = symbol
@@ -48,6 +55,8 @@ class KeywordTree(object):
         self._counter = 1
         self._finalized = False
         self._case_insensitive = case_insensitive
+        self._skip_pattern = None
+        self._skip_pattern_type = None
 
     def add(self, keyword):
         '''
@@ -105,24 +114,87 @@ class KeywordTree(object):
         Can only be called after finalized() has been called.
         O(n) with n = len(text)
         @return: Generator used to iterate over the results.
-                 Or None if no keyword was found in the text.
         '''
         if not self._finalized:
             raise ValueError('KeywordTree has not been finalized.' +
                              ' No search allowed. Call finalize() first.')
         if self._case_insensitive:
             text = text.lower()
+        if self._skip_pattern is not None and \
+                isinstance(text, self._skip_pattern_type):
+            return self._search_all_string(text)
+        return self._search_all_generic(text)
+
+    def _search_all_generic(self, text):
+        '''
+        Search loop for any sequence of hashable symbols.
+        The zero state gets special treatment because on texts that
+        contain few matches the search spends most symbols idling there.
+        '''
         zero_state = self._zero_state
+        zero_transitions_get = zero_state.transitions.get
         current_state = zero_state
         for idx, symbol in enumerate(text):
-            current_state = current_state.transitions.get(
-                symbol, zero_state.transitions.get(symbol, zero_state))
-            state = current_state
-            while state is not zero_state:
-                if state.success:
-                    keyword = state.matched_keyword
-                    yield (keyword, idx + 1 - len(keyword))
-                state = state.longest_strict_suffix
+            if current_state is zero_state:
+                next_state = zero_transitions_get(symbol)
+                if next_state is None:
+                    continue
+            else:
+                next_state = current_state.transitions.get(symbol)
+                if next_state is None:
+                    next_state = zero_transitions_get(symbol)
+                    if next_state is None:
+                        current_state = zero_state
+                        continue
+            current_state = next_state
+            outputs = current_state.outputs
+            if outputs:
+                for keyword, keyword_length in outputs:
+                    yield (keyword, idx + 1 - keyword_length)
+
+    def _search_all_string(self, text):
+        '''
+        Search loop for string input. Stretches of text in which no
+        keyword can start are skipped with a precompiled regex character
+        class of all keyword start symbols, which scans at C speed.
+        '''
+        zero_transitions = self._zero_state.transitions
+        zero_transitions_get = zero_transitions.get
+        pattern_search = self._skip_pattern.search
+        text_length = len(text)
+        match = pattern_search(text)
+        if match is None:
+            return
+        pos = match.start()
+        current_state = zero_transitions[text[pos]]
+        while True:
+            outputs = current_state.outputs
+            if outputs:
+                for keyword, keyword_length in outputs:
+                    yield (keyword, pos + 1 - keyword_length)
+            pos += 1
+            if pos >= text_length:
+                return
+            symbol = text[pos]
+            next_state = current_state.transitions.get(symbol)
+            if next_state is None:
+                next_state = zero_transitions_get(symbol)
+                if next_state is None:
+                    # No keyword can start at pos. Check the next symbol
+                    # inline before paying for a regex call, so that texts
+                    # alternating between skippable and non-skippable
+                    # symbols don't get slower than the generic loop.
+                    pos += 1
+                    if pos >= text_length:
+                        return
+                    next_state = zero_transitions_get(text[pos])
+                    if next_state is None:
+                        match = pattern_search(text, pos + 1)
+                        if match is None:
+                            return
+                        pos = match.start()
+                        next_state = zero_transitions[text[pos]]
+            current_state = next_state
 
     def finalize(self):
         '''
@@ -133,7 +205,60 @@ class KeywordTree(object):
             raise ValueError('KeywordTree has already been finalized.')
         self._zero_state.longest_strict_suffix = self._zero_state
         self.search_lss_for_children(self._zero_state)
+        self._precompute_outputs()
+        self._compile_skip_pattern()
         self._finalized = True
+
+    def _precompute_outputs(self):
+        '''
+        Stores on every state the matches to report when the search
+        reaches it: its own keyword plus the keywords of all success
+        states on its longest_strict_suffix chain, each paired with the
+        keyword's length. This replaces walking the suffix chain for
+        every symbol during search.
+        '''
+        zero_state = self._zero_state
+        zero_state.outputs = ()
+        processed = set()
+        to_process = [zero_state]
+        while to_process:
+            state = to_process.pop()
+            processed.add(state.identifier)
+            for child in state.transitions.values():
+                if child.identifier not in processed:
+                    outputs = []
+                    suffix = child
+                    while suffix is not zero_state:
+                        if suffix.success:
+                            keyword = suffix.matched_keyword
+                            outputs.append((keyword, len(keyword)))
+                        suffix = suffix.longest_strict_suffix
+                    child.outputs = tuple(outputs)
+                    to_process.append(child)
+
+    def _compile_skip_pattern(self):
+        '''
+        Compiles a regex character class matching all symbols that a
+        keyword can start with. The search loop uses it to skip over
+        stretches of text in which no keyword can start. Only possible
+        when all these symbols are single characters of the same string
+        type, otherwise search falls back to the generic loop.
+        '''
+        self._skip_pattern = None
+        self._skip_pattern_type = None
+        symbols = list(self._zero_state.transitions)
+        if not symbols:
+            return
+        symbol_type = type(symbols[0])
+        if symbol_type not in _TEXT_TYPES:
+            return
+        for symbol in symbols:
+            if type(symbol) is not symbol_type or len(symbol) != 1:
+                return
+        character_class = '[' + ''.join(
+            [re.escape(symbol) for symbol in symbols]) + ']'
+        self._skip_pattern = re.compile(character_class)
+        self._skip_pattern_type = symbol_type
 
     def search_lss_for_children(self, zero_state):
         processed = set()
@@ -223,3 +348,10 @@ class KeywordTree(object):
             deserialized_state.transitions = {
                 key: states[value] for key, value in serialized_state['transitions'].items()}
         self._zero_state = states[0]
+        # outputs and the skip pattern are not part of the serialized
+        # format, they are recomputed instead.
+        self._skip_pattern = None
+        self._skip_pattern_type = None
+        if self._finalized:
+            self._precompute_outputs()
+            self._compile_skip_pattern()
