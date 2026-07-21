@@ -1,3 +1,12 @@
+1.7.0
+- updated python compatibility matrix
+- got rid of "future" dependency (#16)
+- documented and added test coverage for matching arbitrary sequences of hashable symbols (#14)
+- repo got transfered from abusix to FrederikP
+
+1.6.2
+- updated python compatibility matrix
+
 1.6.1
 - performance optimizations PR #11 (thanks @amirouche)
 

@@ -132,6 +132,65 @@ Prints :
 ('lacrosse', 23)
 ```
 
+### Arbitrary Sequences of Arbitrary Symbols
+
+ahocorapy is not limited to strings. Keywords and search input can be **any
+sequence of hashable symbols**. Internally the tree never assumes anything about
+the symbols beyond that they can be used as dictionary keys, so it works with
+tuples of integers, byte values, lists of tokens and more.
+
+The only requirements are:
+
+- Each **symbol** (an element of the sequence) must be hashable.
+- Each **keyword** and the **search input** must be an iterable that also
+  supports `len()` (needed to compute match start indices). Strings, tuples,
+  lists and bytes all qualify.
+
+For example, using tuples of integers as keywords:
+
+```python
+from ahocorapy.keywordtree import KeywordTree
+kwtree = KeywordTree()
+kwtree.add((1, 2, 3))
+kwtree.add((2, 3, 4))
+kwtree.finalize()
+
+result = kwtree.search((9, 1, 2, 3, 4, 8))
+print(result)
+```
+
+Prints:
+
+```python
+((1, 2, 3), 1)
+```
+
+Using lists of string tokens enables word-level (instead of character-level)
+matching:
+
+```python
+kwtree = KeywordTree()
+kwtree.add(['hello', 'world'])
+kwtree.finalize()
+
+result = kwtree.search(['say', 'hello', 'world', 'now'])
+print(result)
+```
+
+Prints:
+
+```python
+(['hello', 'world'], 1)
+```
+
+A note on `bytes`: in Python 3 iterating over a `bytes` object yields integers,
+whereas in Python 2 `bytes` is an alias for `str` and yields 1-character
+strings. Matching works in both cases, but the symbol type differs between the
+two Python versions.
+
+The `case_insensitive=True` option is string-specific (it calls `.lower()` on
+keywords and input) and therefore only applies when your symbols are strings.
+
 ### Thread Safety
 
 The construction of the tree is currently NOT thread safe. That means `add`ing shouldn't be called multiple times concurrently. Behavior is undefined.

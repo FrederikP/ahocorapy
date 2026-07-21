@@ -53,7 +53,9 @@ class KeywordTree(object):
         '''
         Add a keyword to the tree.
         Can only be used before finalize() has been called.
-        Keyword should be str or unicode.
+        Keyword can be any sequence of hashable symbols (e.g. str, bytes,
+        tuple or list). Its symbols must be hashable and the keyword must
+        support len(). Note that case_insensitive mode only works with strings.
         '''
         if self._finalized:
             raise ValueError('KeywordTree has been finalized.' +
