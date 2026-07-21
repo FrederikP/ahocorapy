@@ -1,8 +1,20 @@
 name: test
 
 on:
+  # Only run on pushes to master (post-merge validation). Pushes to PR
+  # branches are covered by the pull_request event below, so this avoids
+  # running the suite twice for the same commits.
   push:
+    branches: [master]
+    paths: &code-paths
+      - "src/**"
+      - "tests/**"
+      - "setup.py"
+      - "setup.cfg"
+      - "tox.ini"
+      - ".github/workflows/pythontest.yml"
   pull_request:
+    paths: *code-paths
   workflow_dispatch:
 
 jobs:
