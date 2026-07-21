@@ -10,8 +10,6 @@ Created on Jan 5, 2016
 @author: Frederik Petersen (frederik@the-imperfection.de)
 '''
 
-from builtins import object
-
 
 class State(object):
     __slots__ = ['identifier', 'symbol', 'success', 'transitions', 'parent',

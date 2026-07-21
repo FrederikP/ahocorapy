@@ -1,9 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from builtins import str
 from io import open
 from pickle import dumps, loads
 import unittest
+
+try:
+    text_type = unicode  # Python 2
+except NameError:
+    text_type = str  # Python 3
 
 
 from ahocorapy.keywordtree import KeywordTree
@@ -189,7 +193,7 @@ class TestAhocorapy(unittest.TestCase):
         # Just test that there are no errors
         rep = repr(kwtree)
         self.assertGreater(len(rep), 0)
-        tostring = str(kwtree)
+        tostring = text_type(kwtree)
         self.assertGreater(len(tostring), 0)
 
     def test_finalize_errors(self):
@@ -322,7 +326,7 @@ class TestAhocorapy(unittest.TestCase):
         for word in words:
             tree.add(word)
         tree.finalize()
-        as_string = str(tree._zero_state)
+        as_string = text_type(tree._zero_state)
         self.assertIsNotNone(as_string)
 
 
