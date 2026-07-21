@@ -1,29 +1,62 @@
 name: test
 
-on: [push]
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: ubuntu-20.04
+  test:
+    runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       max-parallel: 4
       matrix:
-        python-version: ["2.7", "3.7", "3.8", "3.9", "3.10", "3.11", "pypy3.8"]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14", "pypy3.10", "pypy3.11"]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v5
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -e .
+          pip install pytest-cov
       - name: Test with pytest
         run: |
-          pip install pytest-cov msgpack-python
-          pytest --cov src/ahocorapy/ --cov-report=xml tests/ahocorapy_test.py
-      - name: Upload coverage info to codecov
+          python -m pytest --cov src/ahocorapy/ --cov-report=xml tests/ahocorapy_test.py
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  # Older interpreters that actions/setup-python can no longer provide, tested
+  # via the official Docker images.
+  test-legacy:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - "python:2.7.18-buster"
+          - "pypy:2.7-7.3-slim"
+          - "python:3.3-slim"
+          - "python:3.4-slim"
+          - "python:3.5-slim"
+          - "python:3.6-slim"
+          - "python:3.7-slim"
+          - "python:3.8-slim"
+
+    steps:
+      - uses: actions/checkout@v5
+      - name: Test in ${{ matrix.image }}
         run: |
-          curl -s https://codecov.io/bash | bash
+          docker run --rm -v "$PWD":/w -w /w ${{ matrix.image }} bash -c '
+            pip install -e . &&
+            pip install pytest-cov &&
+            python -m pytest --cov src/ahocorapy/ tests/ahocorapy_test.py
+          '

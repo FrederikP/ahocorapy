@@ -7,7 +7,7 @@ since inlining and so on was necessary
 
 Created on Jan 5, 2016
 
-@author: Frederik Petersen (fp@abusix.com)
+@author: Frederik Petersen (frederik@the-imperfection.de)
 '''
 
 from builtins import object

@@ -1,5 +1,5 @@
-[![Test](https://img.shields.io/github/actions/workflow/status/abusix/ahocorapy/pythontest.yml?branch=master)](https://github.com/abusix/ahocorapy/actions)
-[![Test Coverage](https://img.shields.io/codecov/c/gh/abusix/ahocorapy/master)](https://codecov.io/gh/abusix/ahocorapy)
+[![Test](https://img.shields.io/github/actions/workflow/status/FrederikP/ahocorapy/pythontest.yml?branch=master)](https://github.com/FrederikP/ahocorapy/actions)
+[![Test Coverage](https://img.shields.io/codecov/c/gh/FrederikP/ahocorapy/master)](https://codecov.io/gh/FrederikP/ahocorapy)
 [![Downloads](https://pepy.tech/badge/ahocorapy)](https://pepy.tech/project/ahocorapy)
 [![PyPi Version](https://img.shields.io/pypi/v/ahocorapy.svg)](https://pypi.python.org/pypi/ahocorapy)
 [![PyPi License](https://img.shields.io/pypi/l/ahocorapy.svg)](https://pypi.python.org/pypi/ahocorapy)
@@ -151,4 +151,4 @@ visualizer.draw('readme_example.png', kwtree)
 
 The resulting .png of the graph looks like this:
 
-![graph for kwtree](https://raw.githubusercontent.com/abusix/ahocorapy/master/img/readme_example.png "Keyword Tree")
+![graph for kwtree](https://raw.githubusercontent.com/FrederikP/ahocorapy/master/img/readme_example.png "Keyword Tree")
