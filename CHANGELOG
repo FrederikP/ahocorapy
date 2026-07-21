@@ -1,3 +1,6 @@
+Upcoming
+- refreshed performance comparison numbers in README (CPython 3.14, PyPy 7.3.23, latest library versions)
+
 1.7.0
 - updated python compatibility matrix
 - got rid of "future" dependency (#16)

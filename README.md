@@ -40,46 +40,48 @@ suitable for really large sets of keywords') which really was the case the last 
 
 ### Performance
 
-I compared the two libraries mentioned above with ahocorapy. We used 50,000 keywords long list and an input text of 34,199 characters.
+I compared the two libraries mentioned above with ahocorapy. We used a 50,000 keywords long list and an input text of 34,198 characters.
 In the text only one keyword of the list is contained.
 The setup process was run once per library and the search process was run 100 times. The following results are in seconds (not averaged for the lookup).
 
-You can perform this test yourself using `python tests/ahocorapy_performance_test.py`. (Except for the pyahocorasick_py results. These were taken by importing the
-pure python version of the code of [pyahocorasick](https://github.com/WojciechMula/pyahocorasick/). It's not available through pypi
-as stated in the code.)
+You can perform this test yourself using `python tests/ahocorapy_performance_test.py`. (Except for the pure python variant of
+pyahocorasick. It's not published on pypi, so those numbers were taken by importing the pure python code from the
+[pyahocorasick](https://github.com/WojciechMula/pyahocorasick/) repo at `etc/py/pyahocorasick.py`.)
 
-I also added measurements for the pure python libraries with run with pypy.
+The pure python libraries were additionally run with pypy.
 
 These are the results:
 
-| Library (Variant)                                      | Setup (1x) | Search (100x) |
-| ------------------------------------------------------ | ---------- | ------------- |
-| ahocorapy\*                                            | 0.30s      | 0.29s         |
-| ahocorapy (run with pypy)\*                            | 0.37s      | 0.10s         |
-| pyahocorasick\*                                        | 0.04s      | 0.04s         |
-| pyahocorasick (run with pypy)\*                        | 0.10s      | 0.05s         |
-| pyahocorasick (pure python variant in github repo)\*\* | 0.50s      | 1.68s         |
-| py_aho_corasick\*                                      | 0.72s      | 4,60s         |
-| py_aho_corasick (run with pypy)\*                      | 0.83s      | 2.02s         |
+| Library (Variant)                                    | Setup (1x) | Search (100x) |
+| ---------------------------------------------------- | ---------- | ------------- |
+| ahocorapy\*                                          | 0.14s      | 0.15s         |
+| ahocorapy (run with pypy)\*                          | 0.21s      | 0.06s         |
+| pyahocorasick\*                                      | 0.02s      | 0.02s         |
+| pyahocorasick (run with pypy)\*                      | 0.03s      | 0.03s         |
+| pyahocorasick (pure python variant in github repo)\* | 0.09s      | 0.21s         |
+| pyahocorasick (pure python variant, run with pypy)\* | 0.13s      | 0.07s         |
+| py_aho_corasick\*                                    | 0.33s      | 2.05s         |
+| py_aho_corasick (run with pypy)\*                    | 0.40s      | 1.03s         |
 
-As expected the C-Extension shatters the pure python implementations. Even though there is probably still room for optimization in
-ahocorapy we are not going to get to the mark that pyahocorasick sets. ahocorapy's lookups are faster than py_aho_corasick.
-When run with pypy ahocorapy is almost as fast as pyahocorasick, at least when it comes to
-searching. The setup overhead is higher due to the suffix shortcutting mechanism used.
+As expected the C-Extension shatters the pure python implementations on CPython. Even though there is probably still room for
+optimization in ahocorapy we are not going to get to the mark that pyahocorasick sets. ahocorapy's lookups are more than an
+order of magnitude faster than py_aho_corasick.
+When run with pypy ahocorapy gets close to pyahocorasick when it comes to searching. The setup overhead is higher due to the
+suffix shortcutting mechanism used.
 
 \* Specs
-  
-CPU: AMD Ryzen 2700X
 
-Linux Kernel: 6.0.6
+CPU: Apple M4 Pro
 
-CPython: 3.11.0  
+OS: macOS 26.5.2 (Darwin 25.5.0)
 
-pypy: PyPy 7.3.9 (Python 3.9.12) with GCC 10.2.1 20210130
+CPython: 3.14.5
 
-Date tested: 2022-11-22
+pypy: PyPy 7.3.23 (Python 3.11.15) with GCC Apple LLVM 21.0.0 (clang-2100.0.123.102)
 
-\*\* Old measurement with different specs
+Library versions: ahocorapy 1.7.0, pyahocorasick 2.3.1, py_aho_corasick 1.1.0
+
+Date tested: 2026-07-21
 
 ## Basic Usage:
 
