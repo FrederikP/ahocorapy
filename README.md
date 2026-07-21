@@ -40,9 +40,12 @@ suitable for really large sets of keywords') which really was the case the last 
 
 ### Performance
 
-I compared the two libraries mentioned above with ahocorapy. We used a 50,000 keywords long list and an input text of 34,198 characters.
-In the text only one keyword of the list is contained.
-The setup process was run once per library and the search process was run 100 times. The following results are in seconds (not averaged for the lookup).
+I compared the two libraries mentioned above with ahocorapy, using a 50,000 keywords long list and two input texts:
+
+- **sparse**: 34,198 characters of text that contain exactly one keyword. This resembles searching ordinary text for a set of names.
+- **dense**: 85,578 characters built by concatenating keywords, containing 6,207 matches. This measures the other extreme, where almost every position is part of a match.
+
+The setup process was run once per library and each search was run 100 times. The following results are in seconds (not averaged for the lookup).
 
 You can perform this test yourself using `python tests/ahocorapy_performance_test.py`. (Except for the pure python variant of
 pyahocorasick. It's not published on pypi, so those numbers were taken by importing the pure python code from the
@@ -52,22 +55,23 @@ The pure python libraries were additionally run with pypy.
 
 These are the results:
 
-| Library (Variant)                                    | Setup (1x) | Search (100x) |
-| ---------------------------------------------------- | ---------- | ------------- |
-| ahocorapy\*                                          | 0.14s      | 0.15s         |
-| ahocorapy (run with pypy)\*                          | 0.21s      | 0.06s         |
-| pyahocorasick\*                                      | 0.02s      | 0.02s         |
-| pyahocorasick (run with pypy)\*                      | 0.03s      | 0.03s         |
-| pyahocorasick (pure python variant in github repo)\* | 0.09s      | 0.21s         |
-| pyahocorasick (pure python variant, run with pypy)\* | 0.13s      | 0.07s         |
-| py_aho_corasick\*                                    | 0.33s      | 2.05s         |
-| py_aho_corasick (run with pypy)\*                    | 0.40s      | 1.03s         |
+| Library (Variant)                                    | Setup (1x) | Search sparse (100x) | Search dense (100x) |
+| ---------------------------------------------------- | ---------- | -------------------- | ------------------- |
+| ahocorapy\*                                          | 0.19s      | 0.02s                | 0.42s               |
+| ahocorapy (run with pypy)\*                          | 0.23s      | 0.01s                | 0.28s               |
+| pyahocorasick\*                                      | 0.02s      | 0.02s                | 0.08s               |
+| pyahocorasick (run with pypy)\*                      | 0.03s      | 0.03s                | 0.15s               |
+| pyahocorasick (pure python variant in github repo)\* | 0.10s      | 0.21s                | 0.69s               |
+| pyahocorasick (pure python variant, run with pypy)\* | 0.18s      | 0.07s                | 0.30s               |
+| py_aho_corasick\*                                    | 0.34s      | 2.05s                | 2.48s               |
+| py_aho_corasick (run with pypy)\*                    | 0.45s      | 1.00s                | 1.19s               |
 
-As expected the C-Extension shatters the pure python implementations on CPython. Even though there is probably still room for
-optimization in ahocorapy we are not going to get to the mark that pyahocorasick sets. ahocorapy's lookups are more than an
-order of magnitude faster than py_aho_corasick.
-When run with pypy ahocorapy gets close to pyahocorasick when it comes to searching. The setup overhead is higher due to the
-suffix shortcutting mechanism used.
+On sparse text ahocorapy is on par with the pyahocorasick C-Extension on CPython, and faster than it on pypy. This is possible
+because during setup ahocorapy precomputes the matches to report per state and a regex character class of all symbols that
+keywords can start with, which the search loop then uses to skip over stretches of text that cannot contain a keyword start at
+C speed. On match-dense text the C-Extension is still clearly faster. Setup takes longer than with pyahocorasick due to the
+suffix shortcutting and match precomputation described above. Compared to the other pure python libraries ahocorapy is the
+fastest in every discipline.
 
 \* Specs
 
@@ -79,7 +83,7 @@ CPython: 3.14.5
 
 pypy: PyPy 7.3.23 (Python 3.11.15) with GCC Apple LLVM 21.0.0 (clang-2100.0.123.102)
 
-Library versions: ahocorapy 1.7.0, pyahocorasick 2.3.1, py_aho_corasick 1.1.0
+Library versions: ahocorapy 1.8.0, pyahocorasick 2.3.1, py_aho_corasick 1.1.0
 
 Date tested: 2026-07-21
 

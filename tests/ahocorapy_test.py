@@ -361,6 +361,33 @@ class TestAhocorapy(unittest.TestCase):
         with self.assertRaises(StopIteration):
             next(results)
 
+    def test_search_all_tuples_of_ints_back_to_zero_state(self):
+        # While in the middle of a partial match, a symbol that neither
+        # continues the match nor starts a new keyword must send the
+        # search back to the zero state.
+        kwtree = KeywordTree()
+        kwtree.add((1, 2))
+        kwtree.add((3,))
+        kwtree.finalize()
+
+        results = kwtree.search_all((1, 9, 3, 1, 2))
+        self.assertEqual(((3,), 2), next(results))
+        self.assertEqual(((1, 2), 3), next(results))
+        with self.assertRaises(StopIteration):
+            next(results)
+
+    def test_text_ending_during_partial_match(self):
+        # The text ends right after a partial match was broken off. Also
+        # covers the text ending while checking whether a keyword could
+        # start at the last symbol.
+        kwtree = KeywordTree()
+        kwtree.add('ab')
+        kwtree.finalize()
+
+        self.assertIsNone(kwtree.search('a.'))
+        self.assertIsNone(kwtree.search('a'))
+        self.assertEqual(('ab', 2), kwtree.search('a.ab'))
+
     def test_bytes(self):
         '''
         Bytes objects work as sequences of symbols, including non-ascii byte
