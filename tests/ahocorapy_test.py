@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 from io import open
 from pickle import dumps, loads
+import sys
 import unittest
 
 try:
@@ -328,6 +329,104 @@ class TestAhocorapy(unittest.TestCase):
         tree.finalize()
         as_string = text_type(tree._zero_state)
         self.assertIsNotNone(as_string)
+
+    def test_tuples_of_ints(self):
+        '''
+        Keywords and search input can be any sequence of hashable symbols,
+        not just strings. Here we use tuples of integers.
+        '''
+        kwtree = KeywordTree()
+        kwtree.add((1, 2, 3))
+        kwtree.add((2, 3, 4))
+        kwtree.add((8,))
+        kwtree.finalize()
+
+        result = kwtree.search((9, 1, 2, 3, 4, 8))
+        self.assertEqual(((1, 2, 3), 1), result)
+
+        result = kwtree.search((5, 6, 7))
+        self.assertIsNone(result)
+
+    def test_search_all_tuples_of_ints(self):
+        kwtree = KeywordTree()
+        kwtree.add((1, 2, 3))
+        kwtree.add((2, 3, 4))
+        kwtree.add((8,))
+        kwtree.finalize()
+
+        results = kwtree.search_all((9, 1, 2, 3, 4, 8))
+        self.assertEqual(((1, 2, 3), 1), next(results))
+        self.assertEqual(((2, 3, 4), 2), next(results))
+        self.assertEqual(((8,), 5), next(results))
+        with self.assertRaises(StopIteration):
+            next(results)
+
+    def test_bytes(self):
+        '''
+        Bytes objects work as sequences of symbols, including non-ascii byte
+        values. This works on both python 2 and 3, even though the symbol type
+        differs between them (see test_bytes_yields_integers_py3 for details).
+        '''
+        kwtree = KeywordTree()
+        kwtree.add(b'abc')
+        kwtree.add(b'\xff\x00')
+        kwtree.finalize()
+
+        result = kwtree.search(b'xxabc')
+        self.assertEqual((b'abc', 2), result)
+
+        result = kwtree.search(b'\x01\xff\x00\x02')
+        self.assertEqual((b'\xff\x00', 1), result)
+
+    @unittest.skipIf(sys.version_info[0] < 3,
+                     'In python 2 bytes is an alias for str, so iterating a '
+                     'bytes object yields 1-char str symbols instead of the '
+                     'integers this test relies on.')
+    def test_bytes_yields_integers_py3(self):
+        '''
+        In python 3 iterating over a bytes object yields integers. Because the
+        tree only cares about the individual symbols, an integer-based keyword
+        matches a bytes input. This is python 3 specific and therefore skipped
+        on python 2, where bytes symbols are 1-char strings.
+        '''
+        kwtree = KeywordTree()
+        # keyword built from the integer byte values of b'abc' (97, 98, 99)
+        kwtree.add((97, 98, 99))
+        kwtree.finalize()
+
+        result = kwtree.search(b'xxabc')
+        self.assertEqual(((97, 98, 99), 2), result)
+
+    def test_list_of_tokens(self):
+        '''
+        Using lists of string tokens enables word-level (rather than
+        character-level) matching. Symbols must be hashable; the keyword and
+        input sequences themselves need only support iteration and len().
+        '''
+        kwtree = KeywordTree()
+        kwtree.add(['hello', 'world'])
+        kwtree.add(['foo', 'bar', 'baz'])
+        kwtree.finalize()
+
+        result = kwtree.search(['say', 'hello', 'world', 'now'])
+        self.assertEqual((['hello', 'world'], 1), result)
+
+        result = kwtree.search(['helloworld'])
+        self.assertIsNone(result)
+
+    def test_pickling_arbitrary_sequence(self):
+        kwtree = KeywordTree()
+        kwtree.add((1, 2, 3))
+        kwtree.add((2, 3, 4))
+        kwtree.finalize()
+
+        deserialized = loads(dumps(kwtree))
+
+        results = deserialized.search_all((0, 1, 2, 3, 4))
+        self.assertEqual(((1, 2, 3), 1), next(results))
+        self.assertEqual(((2, 3, 4), 2), next(results))
+        with self.assertRaises(StopIteration):
+            next(results)
 
 
 if __name__ == '__main__':
