@@ -27,7 +27,7 @@ jobs:
           pip install pytest-cov
       - name: Test with pytest
         run: |
-          python -m pytest --cov src/ahocorapy/ --cov-report=xml tests/ahocorapy_test.py
+          python -m pytest --cov src/ahocorapy/ --cov-report=xml --cov-branch tests/ahocorapy_test.py
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
@@ -58,5 +58,5 @@ jobs:
           docker run --rm -v "$PWD":/w -w /w ${{ matrix.image }} bash -c '
             pip install -e . &&
             pip install pytest-cov &&
-            python -m pytest --cov src/ahocorapy/ tests/ahocorapy_test.py
+            python -m pytest --cov src/ahocorapy/ --cov-report=xml --cov-branch tests/ahocorapy_test.py
           '
