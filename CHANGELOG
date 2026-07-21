@@ -1,4 +1,6 @@
 Upcoming
+
+1.8.0
 - major search performance improvement: matches to report are precomputed per state and
   for string inputs stretches of text in which no keyword can start are skipped using a
   precompiled regex character class. Searching text with few matches is now ~6x faster
