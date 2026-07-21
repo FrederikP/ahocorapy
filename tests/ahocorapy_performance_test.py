@@ -4,7 +4,11 @@ from timeit import timeit
 
 from py_aho_corasick import py_aho_corasick
 
-import builtins
+try:
+    import builtins  # Python 3
+except ImportError:
+    import __builtin__ as builtins  # Python 2
+
 from ahocorapy.keywordtree import KeywordTree
 import ahocorasick
 

@@ -1,6 +1,9 @@
-from builtins import str
-from builtins import object
 import pygraphviz as pgv
+
+try:
+    text_type = unicode  # Python 2
+except NameError:
+    text_type = str  # Python 3
 
 
 class Visualizer(object):
@@ -23,7 +26,7 @@ class Visualizer(object):
             graph.add_node(
                     state.identifier,
                     color='green',
-                    label=str(state.identifier) + ' [' +
+                    label=text_type(state.identifier) + ' [' +
                     ','.join(results) + ']')
         else:
             graph.add_node(state.identifier)

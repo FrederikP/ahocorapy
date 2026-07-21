@@ -24,7 +24,6 @@ setup(
     name='ahocorapy',
     packages=find_packages('src'),
     package_dir={'': 'src'},
-    install_requires=['future'],
     python_requires='>=2.7',
     url='https://github.com/FrederikP/ahocorapy',
     project_urls={
